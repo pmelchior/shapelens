@@ -1,0 +1,6 @@
+# do not track directories for compiled files and documentation
+bin/*
+doc/html/
+*.o
+*.so
+*.a
