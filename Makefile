@@ -11,7 +11,6 @@ LIBPATH = lib
 DOCPATH = doc
 PROGSRCPATH = progs
 PROGPATH = bin
-TESTSRCPATH = test
 
 ########
 # setting defaults and other environment variables
@@ -60,8 +59,6 @@ SRC = $(wildcard $(SRCPATH)/*.cc)
 OBJECTS = $(SRC:$(SRCPATH)/%.cc=$(LIBPATH)/%.o)
 PROGS = $(wildcard $(PROGSRCPATH)/*.cc)
 PROGSOBJECTS = $(PROGS:$(PROGSRCPATH)/%.cc=$(PROGPATH)/%)
-TESTS = $(wildcard $(TESTSRCPATH)/*.cc)
-TESTOBJECTS = $(TESTS:$(TESTSRCPATH)/%.cc=$(TESTSRCPATH)/%)
 HEADERS = $(wildcard $(INCLPATH)/*.h)
 
 all: $(LIBPATH) $(DOCPATH) library shared
@@ -102,8 +99,6 @@ installprogs: progs
 	mkdir -p $(PREFIX)/bin
 	cp $(PROGSOBJECTS) $(PREFIX)/bin/
 
-test: $(TESTOBJECTS)
-
 docs: $(HEADERS)
 	doxygen doc/Doxyfile
 
@@ -123,7 +118,4 @@ $(LIBPATH)/%.o: $(SRCPATH)/%.cc
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(PROGPATH)/%: $(PROGSRCPATH)/%.cc
-	$(CC) $(CFLAGS) $(SPECIAL_LIBS) -L$(LIBPATH) $< -o $@ -l$(LIBNAME) $(LIBS)
-
-$(TESTSRCPATH)/%: $(TESTSRCPATH)/%.cc
 	$(CC) $(CFLAGS) $(SPECIAL_LIBS) -L$(LIBPATH) $< -o $@ -l$(LIBNAME) $(LIBS)
