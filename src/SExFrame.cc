@@ -9,7 +9,7 @@ using namespace shapelens;
 typedef unsigned int uint;
 
 SExFrame::SExFrame (std::string datafile, std::string catfile, std::string segmapfile, std::string weightfile) : 
-  catalog(catfile), basefilename(datafile) {
+  catalog(catfile), basefilename(datafile), bg(0) {
 
   // open datafile
   fptr = FITS::openFile(datafile);
@@ -88,8 +88,6 @@ void SExFrame::fillObject(Object& O, Catalog::const_iterator& catiter) {
     O.history << "# Extending the area around object to (" << xmin << "/" << ymin << ") to (";
     O.history << xmax << "/" << ymax << ")" << std::endl;
 
-    // check if object was close to the image boundary so that noise has to be added
-
     // prepare containers
     O.resize((xmax-xmin)*(ymax-ymin));
     // Grid will be changed but not shifted (all pixels stay at their position)
@@ -117,33 +115,33 @@ void SExFrame::fillObject(Object& O, Catalog::const_iterator& catiter) {
     data_t nullval = 0;
     int anynull = 0;
     long firstpix[2] = {xmin+1,ymin+1}, lastpix[2] = {xmax, ymax}, inc[2] = {1,1};
+    O.setZero();
     fits_read_subset(fptr, FITS::getDataType(data_t(0)), firstpix, lastpix, inc, &nullval, O.ptr(), &anynull, &status);
-    if (fptr_w != NULL) 
+    if (fptr_w != NULL) {
+      O.weight.setZero();
       fits_read_subset(fptr_w, FITS::getDataType(data_t(0)), firstpix, lastpix, inc, &nullval, O.weight.ptr(), &anynull, &status);
-    if (fptr_s != NULL) 
+    }
+    if (fptr_s != NULL) {
+      O.segmentation.setAllTo(-1);
       fits_read_subset(fptr_s, FITS::getDataType(long(0)), firstpix, lastpix, inc, &nullval, O.segmentation.ptr(), &anynull, &status);
+    }
 
-    // check image pixels: replace pixels outside the original frame
-    // or those belonging to another object by background noise
-    if (Config::CHECK_OBJECT && (anynull != 0 || fptr_s != NULL)) {
+    // check image pixels for neighboring objects (noted in history)
+    // also eliminate the background is non-zero
+    if (Config::CHECK_OBJECT && fptr_s != NULL) {
       vector<uint> nearby_objects;
       for (int i =0; i < O.size(); i++) {
-	Point<int> P = O.grid.getCoords(i);
-	// outside
-	if (P(0) < 0 || P(0) >= axsize0 || P(1) < 0 || P(1) >= axsize1) {
-	  O(i) = O.weight(i) = 0;
-	  O.segmentation(i) = -1;
+
+	if (bg != 0) {
+	  Point<int> P = O.grid.getCoords(i);
+	  if (P(0) >= 0 & P(0) < axsize0 & P(1) >= 0 & P(1) < axsize1)
+	    O(i) -= bg;
 	}
 
-	// check segmap
-	if (fptr_s != NULL) {
-	  if (O.segmentation(i) > 0 && O.segmentation(i) != catiter->first) {
-	    
-	    // this objects has to yet been found to be nearby
-	    if (std::find(nearby_objects.begin(),nearby_objects.end(),O.segmentation(i)) == nearby_objects.end()) {
-	      O.history << "# Object " << O.segmentation(i) << " nearby, but not overlapping." << std::endl;
-	      nearby_objects.push_back(O.segmentation(i));
-	    }
+	if (O.segmentation(i) > 0 && O.segmentation(i) != catiter->first) {
+	  if (std::find(nearby_objects.begin(),nearby_objects.end(),O.segmentation(i)) == nearby_objects.end()) {
+	    O.history << "# Object " << O.segmentation(i) << " nearby!" << std::endl;
+	    nearby_objects.push_back(O.segmentation(i));
 	  }
 	}
       }
@@ -188,4 +186,8 @@ void SExFrame::addFrameBorder(data_t factor, int& xmin, int& xmax, int& ymin, in
     ymin = std::max((long int) 0, ymin - yborder);
     ymax = std::min(axsize1, ymax + yborder);
   }
+}
+
+void SExFrame::subtractBackground(data_t bg_) {
+  bg = bg_;
 }

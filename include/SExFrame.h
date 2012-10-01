@@ -70,6 +70,8 @@ namespace shapelens {
     /// The object is selected by the iterator \p catiter, which must must
     /// be constructed from SExFrame::catalog.\n
     void fillObject(Object& obj, Catalog::const_iterator& catiter);
+    /// Subtract a constant background level from each object in fillObject().
+    void subtractBackground(data_t bg);
     /// Return number of objects found by SExtractor.
     /// If it returns 0, the catalog file is either empty or its format
     /// is wrongly specified.
@@ -85,6 +87,7 @@ namespace shapelens {
     std::string basefilename;
     void addFrameBorder(data_t factor, int& xmin, int& xmax, int& ymin, int& ymax);
     long axsize0, axsize1;
+    data_t bg;
   };
 } // end namespace
 #endif
