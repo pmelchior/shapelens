@@ -9,7 +9,7 @@ namespace shapelens {
     fitsfile* outfptr;
     fits_open_file(&outfptr, filename.c_str(), (int) write, &status);
     if (status != 0)
-      throw std::runtime_error("FITS: Cannot open " + filename);
+      throw std::runtime_error("FITS: Cannot open " + filename + ": " + getErrorMessage(status));
     return outfptr;
   }
 
@@ -18,7 +18,7 @@ namespace shapelens {
     fitsfile* outfptr;
     fits_open_table(&outfptr, filename.c_str(), (int) write, &status);
     if (status != 0)
-      throw std::runtime_error("FITS: Cannot open " + filename);
+      throw std::runtime_error("FITS: Cannot open " + filename + ": " + getErrorMessage(status));
     return outfptr;
   }
 			      
@@ -29,7 +29,7 @@ namespace shapelens {
     // create fits file
     fits_create_file(&outfptr,newfilename.c_str(), &status);
     if (status != 0)
-      throw std::runtime_error("FITS: Cannot create " + filename);
+      throw std::runtime_error("FITS: Cannot create " + filename + ": " + getErrorMessage(status));
     return outfptr;
   }
 
@@ -37,7 +37,7 @@ namespace shapelens {
     int status = 0;
     fits_close_file(fptr, &status);
     if (status != 0)
-	  throw std::runtime_error("FITS: Cannot close FITS file " + getFileName(fptr));
+	  throw std::runtime_error("FITS: Cannot close FITS file " + getFileName(fptr) + ": " + getErrorMessage(status));
   }
 
   std::string FITS::getFileName(fitsfile *fptr) {
@@ -45,8 +45,16 @@ namespace shapelens {
     char header[FLEN_FILENAME];
     fits_file_name(fptr, header, &status);
     if (status != 0)
-      throw std::invalid_argument("FITS: Cannot get filename pointer");
+      throw std::invalid_argument("FITS: Cannot get filename pointer: " + getErrorMessage(status));
     return std::string(header);
+  }
+
+  std::string FITS::getErrorMessage(int status) {
+    char err[FLEN_STATUS];
+    fits_get_errstatus(status, err);
+    std::ostringstream note;
+    note << err << " (" << status << ")";
+    return note.str();
   }
 
   void FITS::moveToExtension(fitsfile* fptr, unsigned int i) {
@@ -54,7 +62,7 @@ namespace shapelens {
     fits_movabs_hdu(fptr, i, NULL, &status);
     if (status != 0) {
       std::ostringstream note;
-      note << "FITS: Cannot move to extension " << i << " in " + getFileName(fptr);
+      note << "FITS: Cannot move to extension " << i << " in " + getFileName(fptr) << ": " << getErrorMessage(status);
       throw std::runtime_error(note.str());
     }
   }
@@ -64,7 +72,7 @@ namespace shapelens {
     fits_movnam_hdu(fptr, hdutype, const_cast<char*>(name.c_str()), extver, &status);
     if (status != 0) {
       std::ostringstream  note;
-      note << "FITS: Cannot move to extension " << name << " in " << getFileName(fptr);
+      note << "FITS: Cannot move to extension " << name << " in " << getFileName(fptr) << ": " << getErrorMessage(status);
       throw std::runtime_error(note.str());
     }
   }
@@ -89,7 +97,7 @@ namespace shapelens {
       fits_write_history (fptr,const_cast<char*>(card.c_str()), &status);
     }
     if (status != 0)
-      throw std::runtime_error("FITS: Cannot append FITS history to " + getFileName(fptr));
+      throw std::runtime_error("FITS: Cannot append FITS history to " + getFileName(fptr) + ": " + getErrorMessage(status));
   }
 
   void FITS::readKeyCards(fitsfile *fptr, const std::string& key, std::string& value) {
@@ -107,7 +115,7 @@ namespace shapelens {
       }
     }
     if (status != 0)
-      throw std::invalid_argument("FITS: Cannot read FITS keycards from " + getFileName(fptr));
+      throw std::invalid_argument("FITS: Cannot read FITS keycards from " + getFileName(fptr) + ": " + getErrorMessage(status));
   }
 
   long FITS::getTableRows(fitsfile* fptr) {
@@ -115,7 +123,7 @@ namespace shapelens {
     long nrows;
     fits_get_num_rows(fptr, &nrows, &status);
     if (status != 0)
-      throw std::runtime_error("FITS: Cannot find number of rows in table in " + getFileName(fptr));
+      throw std::runtime_error("FITS: Cannot find number of rows in table in " + getFileName(fptr) + ": " + getErrorMessage(status));
     return nrows;
   }
 
@@ -124,12 +132,12 @@ namespace shapelens {
     fits_get_colnum(fptr, 0, const_cast<char*>(name.c_str()), &colnum, &status);
     if (status == COL_NOT_UNIQUE) {
       std::ostringstream note;
-      note << "FITS: Column " << name + " in FITS table is not unique in " << getFileName(fptr);
+      note << "FITS: Column " << name + " in FITS table is not unique in " << getFileName(fptr) << ": " << getErrorMessage(status);
       throw std::runtime_error(note.str());
     }
     else if (status != 0) {
       std::ostringstream note;
-      note << "FITS: Cannot find column " << name << " in FITS table in " << getFileName(fptr);
+      note << "FITS: Cannot find column " << name << " in FITS table in " << getFileName(fptr)  << ": " << getErrorMessage(status);
       throw std::invalid_argument(note.str());
     }
     return colnum;
@@ -141,7 +149,7 @@ namespace shapelens {
     fits_get_coltype(fptr, colnr, &typecode, &repeat, &width, &status);
     if (status != 0) {
       std::ostringstream note;
-      note << "FITS: Cannot find type of column " << colnr << " in FITS table in " << getFileName(fptr);
+      note << "FITS: Cannot find type of column " << colnr << " in FITS table in " << getFileName(fptr) << ": " << getErrorMessage(status);
       throw std::invalid_argument(note.str());
     }
     return typecode;

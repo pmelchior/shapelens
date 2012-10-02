@@ -88,6 +88,8 @@ namespace shapelens {
     static void readKeyCards(fitsfile *fptr, const std::string& key, std::string& value);
     /// Get name of FITS file from its pointer.
     static std::string getFileName(fitsfile *fptr);
+    /// Get description error message from status code.
+    static std::string getErrorMessage(int status);
     /// Read in keyword from FITS header.
     template <class T>
       static void readKeyword(fitsfile *fptr, const std::string& key, T& val) {
@@ -97,7 +99,7 @@ namespace shapelens {
 
       if (status != 0) {
 	std::ostringstream note;
-	note << "FITS: Cannot read FITS keyword " << key << " from " << getFileName(fptr);
+	note << "FITS: Cannot read FITS keyword " << key << " from " << getFileName(fptr) << ": " << getErrorMessage(status);
 	throw std::invalid_argument(note.str());
       }
     }
@@ -111,7 +113,7 @@ namespace shapelens {
 
       if (status != 0) {
 	std::ostringstream note;
-	note << "FITS: Cannot update FITS keyword " << keyword << " = " << value_ << " in " << getFileName(fptr);
+	note << "FITS: Cannot update FITS keyword " << keyword << " = " << value_ << " in " << getFileName(fptr) << ": " << getErrorMessage(status);
 	throw std::runtime_error(note.str());
       }
     }
@@ -142,8 +144,9 @@ namespace shapelens {
       if (extname != "")
 	updateKeyword(fptr, "EXTNAME", extname);
       updateKeyword(fptr, "CREATOR", std::string("shapelens"));
+
       if (status != 0)
-	throw std::runtime_error("FITS: Cannot write FITS image in " + getFileName(fptr));
+	throw std::runtime_error("FITS: Cannot write FITS image " + extname + " to " + getFileName(fptr) + ": " + getErrorMessage(status));
     }
   
     /// Write FITS image from a tmv::Matrix<T>.
@@ -172,7 +175,7 @@ namespace shapelens {
 	updateKeyword(fptr, "EXTNAME", extname);
       updateKeyword(fptr, "CREATOR", std::string("shapelens"));
       if (status != 0)
-	throw std::runtime_error("FITS: Cannot write FITS image to " + getFileName(fptr));
+	throw std::runtime_error("FITS: Cannot write FITS image " + extname + " to " + getFileName(fptr) + ": " + getErrorMessage(status));
     }
 
     /// Read FITS image into tmv::Matrix<T>.
@@ -194,7 +197,7 @@ namespace shapelens {
       int datatype = getDataType(val);
       fits_read_pix(fptr, datatype, firstpix, naxes[0]*naxes[1], NULL, M.ptr(), NULL, &status);
       if (status != 0)
-	throw std::runtime_error("FITS: Cannot read FITS image in " + getFileName(fptr));
+	throw std::runtime_error("FITS: Cannot read FITS image from " + getFileName(fptr) + ": " + getErrorMessage(status));
     }
 
     /// Read FITS image into Image<T>.
@@ -227,7 +230,7 @@ namespace shapelens {
       int datatype = getDataType(val);
       fits_read_pix(fptr, datatype, firstpix, im.size(), NULL, im.ptr(), NULL, &status);
       if (status != 0)
-	throw std::runtime_error("FITS: Cannot read FITS image from "+ getFileName(fptr));
+	throw std::runtime_error("FITS: Cannot read FITS image from "+ getFileName(fptr) + ": " + getErrorMessage(status));
     }
 
     /// Get number of rows in FITS table.
@@ -247,13 +250,17 @@ namespace shapelens {
       fits_read_col(fptr, getDataType(val), colnr, row+1, 1, 1, &nullvalue, &val, &anynull, &status);
       if (status != 0) {
 	std::ostringstream note;
-	note << "FITS: Cannot read value in (row/col) = (" << row << "/" << colnr << ") from FITS table in " << getFileName(fptr);
+	note << "FITS: Cannot read value in (row/col) = (" << row << "/" << colnr << ") from FITS table in " << getFileName(fptr) << ": " << getErrorMessage(status);
 	throw std::runtime_error(note.str());
       }
     }
   };
 
   // template specializations
+  template<> inline
+    int FITS::getImageFormat<int>(const int& entry) {
+    return SHORT_IMG;
+  }
   template<> inline
     int FITS::getImageFormat<unsigned int>(const unsigned int& entry) {
     return USHORT_IMG;

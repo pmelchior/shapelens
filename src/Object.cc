@@ -66,10 +66,6 @@ Object::Object(std::string objfile) : Image<data_t>(), segmentation() {
     if (extname == "WEIGHT") {
       history << " and weight map";
       FITS::readImage(fptr, weight);
-    } else if (extname == "CORRELATFITSN") {
-      history << " and correlation function";
-      tmv::Matrix<data_t> corr;
-      FITS::readImage(fptr, corr);
     }
   }
   history << std::endl;
