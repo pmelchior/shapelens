@@ -88,7 +88,6 @@ namespace shapelens {
     static void readKeyCards(fitsfile *fptr, const std::string& key, std::string& value);
     /// Get name of FITS file from its pointer.
     static std::string getFileName(fitsfile *fptr);
-
     /// Read in keyword from FITS header.
     template <class T>
       static void readKeyword(fitsfile *fptr, const std::string& key, T& val) {

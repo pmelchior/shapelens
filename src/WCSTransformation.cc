@@ -67,14 +67,18 @@ namespace shapelens {
       int A_order, B_order;
       FITS::readKeyword(fptr, "A_ORDER", A_order);
       FITS::readKeyword(fptr, "B_ORDER", B_order);
-      A = tmv::Matrix<data_t>(A_order+1, A_order+1);
-      B = tmv::Matrix<data_t>(B_order+1, B_order+1);
+      A.resize(A_order+1, A_order+1);
+      B.resize(B_order+1, B_order+1);
+      A.setZero();
+      B.setZero();
       for (int i=0; i <= A_order; i++) {
 	for (int j=0; j <= A_order; j++) {
 	  key.str("");
 	  key << "A_" << i << "_" << j;
 	  try { // not all coefficients need to be present
-	    FITS::readKeyword(fptr, key.str(), A(i,j));
+	    data_t x;
+	    FITS::readKeyword(fptr, key.str(), x);
+	    A(i,j) = x;
 	  } catch (std::invalid_argument) {}
 	}
       }

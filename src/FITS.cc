@@ -42,7 +42,7 @@ namespace shapelens {
 
   std::string FITS::getFileName(fitsfile *fptr) {
     int status = 0;
-    char *header;
+    char header[FLEN_FILENAME];
     fits_file_name(fptr, header, &status);
     if (status != 0)
       throw std::invalid_argument("FITS: Cannot get filename pointer");
@@ -139,7 +139,6 @@ namespace shapelens {
     int status = 0, typecode;
     long repeat, width;
     fits_get_coltype(fptr, colnr, &typecode, &repeat, &width, &status);
-    
     if (status != 0) {
       std::ostringstream note;
       note << "FITS: Cannot find type of column " << colnr << " in FITS table in " << getFileName(fptr);
