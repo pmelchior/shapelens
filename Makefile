@@ -66,6 +66,9 @@ all: $(LIBPATH) $(DOCPATH) library shared
 $(LIBPATH):
 	mkdir -p $(LIBPATH)
 
+$(PROGPATH):
+	mkdir -p $(PROGPATH)
+
 $(DOCPATH):
 	mkdir -p $(DOCPATH)
 
@@ -93,7 +96,7 @@ install: library shared
 	mkdir  -p $(PREFIX)/include/$(LIBNAME)
 	cd $(INCLPATH) && find . -type f -name '*.h' -exec  cp --parents {} $(PREFIX)/include/$(LIBNAME)/ \; && cd ../
 
-progs: $(PROGSOBJECTS)
+progs: $(PROGPATH) $(PROGSOBJECTS)
 
 installprogs: progs
 	mkdir -p $(PREFIX)/bin
