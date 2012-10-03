@@ -76,9 +76,7 @@ namespace shapelens {
 	  key.str("");
 	  key << "A_" << i << "_" << j;
 	  try { // not all coefficients need to be present
-	    data_t x;
-	    FITS::readKeyword(fptr, key.str(), x);
-	    A(i,j) = x;
+	    FITS::readKeyword(fptr, key.str(), A(i,j));
 	  } catch (std::invalid_argument) {}
 	}
       }
@@ -100,7 +98,8 @@ namespace shapelens {
   
   // explicit definition since we have to allocate containers
   // and perform a deep copy of wcs
-  WCSTransformation::WCSTransformation(const WCSTransformation& W) {
+  WCSTransformation::WCSTransformation(const WCSTransformation& W) :
+    A(W.A), B(W.B), intermediate (W.intermediate), has_sip(W.has_sip), crpix1(W.crpix1), crpix2(W.crpix2) {
     world  = (double*) realloc(NULL,  2 * sizeof(double));
     imgcrd = (double*) realloc(NULL, 2 * sizeof(double));
     pixcrd = (double*) realloc(NULL, 2 * sizeof(double));
@@ -109,12 +108,6 @@ namespace shapelens {
     wcsini(1, 2, &wcs);
     wcscopy(0, &(W.wcs), &wcs);
     wcsset(&wcs);
-    intermediate = W.intermediate;
-    has_sip = W.has_sip;
-    A = W.A;
-    B = W.B;
-    crpix1 = W.crpix1;
-    crpix2 = W.crpix2;
   }
   
   // explicit definition to deallocate all structures
