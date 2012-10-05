@@ -73,7 +73,8 @@ class Grid {
   /// For performance reasons, the directions are defined as:
   /// \f[\begin{bmatrix}6 & 7 & 8 \\ 1 & 0 & 2 \\ 3 & 4 & 5\end{bmatrix}\f]
   long getNeighborPixel(long pixel, unsigned char direction) const;
-
+  /// Ostream from Grid.
+  friend std::ostream& operator<<(std::ostream& os, const Grid& grid);
  private:
   int N0, N1, start0,start1;
   boost::shared_ptr<CoordinateTransformation> ct;

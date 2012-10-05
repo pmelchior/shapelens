@@ -131,7 +131,8 @@ namespace shapelens {
   void WCSTransformation::f(Point<data_t>& P) const {
     // apply sip transform if necessary
     if (has_sip) {
-      double u = P(0) - crpix1, v = P(1) - crpix2;
+      // WCS pixels start at (1/1), so add 1
+      double u = P(0) + 1 - crpix1, v = P(1) + 1 - crpix2;
       double f = sip_polynomial(A,u,v), g = sip_polynomial(B, u, v);
       *pixcrd = u + f + crpix1;
       *(pixcrd+1) = v + g + crpix2;
@@ -159,6 +160,7 @@ namespace shapelens {
   void WCSTransformation::f_1(Point<data_t>& P) const {
     // inverse: this trafo comes last
     stack_inverse_transform(P);
+
     // use intermediate world coordinates (as input)
     // rather than celestial
     if (intermediate) {
@@ -189,6 +191,10 @@ namespace shapelens {
       P(0) = u + crpix1;
       P(1) = v + crpix2;
     }
+
+    // since WCS pixels start at (1/1), subtract of 1 to conform with shapelens
+    P(0) -= 1;
+    P(1) -= 1;
   }
 
   boost::shared_ptr<CoordinateTransformation> WCSTransformation::clone() const {

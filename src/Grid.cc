@@ -206,4 +206,11 @@ namespace shapelens {
       return getNeighborPixel(getCoords(pixel),direction);
   }
 
+  std::ostream& operator<<(std::ostream& os, const Grid& grid) {
+    os << "(" << grid.start0 << "/" << grid.start1 << ") .. ";
+    os << "(" << grid.start0 + grid.N0 << "/" << grid.start1 + grid.N1 << ")";
+    if (grid.ct.use_count() != 0)
+      os << " with WCS";
+    return os;
+  }
 } // end namespace

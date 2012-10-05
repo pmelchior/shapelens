@@ -82,8 +82,8 @@ namespace shapelens {
 	S += S_k;
       }
       S = S.inverse();
-      mo = S * (tmv::Vector<data_t>)mo;
-      SN = mo(0,0)/sqrt(S(0,0)/K);
+      mo = S * mo;
+      SN = mo(0,0)/sqrt(S(0,0));
 
       int i = mo.getIndex(2,0);
       data_t eta = sqrt(S(i,i)) / fabs(mo(i));
@@ -150,7 +150,7 @@ namespace shapelens {
       d.eps = shapelens::epsilon(mo_c);
       d.matching_scale = getWeightFunctionScale(k);
       d.scale = d.getEpsScale();
-      history << "# " << t << "." << k << "\t" << mo_c << "\t" << d.matching_scale << "\t" << d.eps << std::endl;
+      history << "# " << t << "." << k << "\t" << mo_c << "\t" << d.matching_scale << "\t" << d.scale/d.scale_factor << "\t" << d.eps << std::endl;
 
       DEIMOSElliptical::WeightFunction w(d.scale, d.centroid, d.eps);
       Moments mo_w(meo[k], w, DEIMOS::N + d.C, &d.centroid);
