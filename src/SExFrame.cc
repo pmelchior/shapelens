@@ -123,7 +123,7 @@ void SExFrame::fillObject(Object& O, Catalog::const_iterator& catiter) {
     }
     if (fptr_s != NULL) {
       O.segmentation.setAllTo(-1);
-      fits_read_subset(fptr_s, FITS::getDataType(long(0)), firstpix, lastpix, inc, &nullval, O.segmentation.ptr(), &anynull, &status);
+      fits_read_subset(fptr_s, FITS::getDataType(int(0)), firstpix, lastpix, inc, &nullval, O.segmentation.ptr(), &anynull, &status);
     }
 
     // check image pixels for neighboring objects (noted in history)
