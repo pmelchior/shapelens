@@ -86,9 +86,9 @@ namespace shapelens {
       SN = mo(0,0)/sqrt(S(0,0));
 
       int i = mo.getIndex(2,0);
-      data_t eta = sqrt(S(i,i)) / fabs(mo(i));
+      data_t eta = sqrt(S(i,i))/mo(i);
       i = mo.getIndex(0,2);
-      eta += sqrt(S(i,i)) / fabs(mo(i));
+      eta += sqrt(S(i,i))/mo(i);
       eta /= 2;
 
       history << "# ==>\t" << mo << "\t" << SN << "\t" << shapelens::epsilon(mo) << "\t" << chi2 << "\t" << eta << std::endl;

@@ -67,7 +67,7 @@ namespace shapelens {
     }
   }
 
-  void FITS:: moveToExtension(fitsfile* fptr, const std::string& name) {
+  void FITS::moveToExtension(fitsfile* fptr, const std::string& name) {
     int status = 0, hdutype = ANY_HDU, extver = 0;
     fits_movnam_hdu(fptr, hdutype, const_cast<char*>(name.c_str()), extver, &status);
     if (status != 0) {

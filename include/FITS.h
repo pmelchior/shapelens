@@ -31,7 +31,7 @@ namespace shapelens {
     inline static char* data(std::string s) {
       return const_cast<char*>(s.c_str());
     }
-  
+    
   public:
  
     /// Return FITS image format definition, based on the type of \p entry.
@@ -88,7 +88,7 @@ namespace shapelens {
     static void readKeyCards(fitsfile *fptr, const std::string& key, std::string& value);
     /// Get name of FITS file from its pointer.
     static std::string getFileName(fitsfile *fptr);
-    /// Get description error message from status code.
+    /// Get descriptive error message from status code.
     static std::string getErrorMessage(int status);
     /// Read in keyword from FITS header.
     template <class T>
@@ -211,7 +211,7 @@ namespace shapelens {
       fits_get_img_dim(fptr, &naxis, &status);
       if (naxis!=2)
 	throw std::invalid_argument("FITS: naxis != 2. Pointer of " + getFileName(fptr) + " does not provide image");
-
+      
       long naxes[2] = {1,1};
       fits_get_img_size(fptr, naxis, naxes, &status);
       im.grid.setSize(0,0,naxes[0],naxes[1]);
@@ -220,7 +220,7 @@ namespace shapelens {
 #ifdef HAS_WCSLIB
 	im.grid.setWCS(WCSTransformation(fptr));
 #else
-	throw std::runtime_error("FITS: WCS usage requested, but HAS_WCSToolsLib not specified");
+	throw std::runtime_error("FITS: WCS usage requested, but HAS_WCSLIB not specified");
 #endif
       }
 
@@ -230,7 +230,7 @@ namespace shapelens {
       int datatype = getDataType(val);
       fits_read_pix(fptr, datatype, firstpix, im.size(), NULL, im.ptr(), NULL, &status);
       if (status != 0)
-	throw std::runtime_error("FITS: Cannot read FITS image from "+ getFileName(fptr) + ": " + getErrorMessage(status));
+	throw std::runtime_error("FITS: Cannot read FITS image from " + getFileName(fptr) + ": " + getErrorMessage(status));
     }
 
     /// Get number of rows in FITS table.
