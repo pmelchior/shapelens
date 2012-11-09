@@ -5,9 +5,10 @@
 namespace shapelens {
 
   bool DEIMOSForward::FIX_CENTROID = false;
+  data_t DEIMOSForward::ETA_MAX = 0.1;
 
   DEIMOSForward::DEIMOSForward(const MultiExposureObject& meo_, const std::vector<DEIMOS::PSFMultiScale>& mePSFMultiScale_, int N, int C) :
-    DEIMOS(N), meo(meo_), mepsf(MultiExposureObject()), mePSFMultiScale(mePSFMultiScale_), K(meo_.size()) {
+    DEIMOS(N), meo(meo_), mePSFMultiScale(mePSFMultiScale_), K(meo_.size()) {
     initialize(C);
     minimize();
   }
@@ -16,6 +17,7 @@ namespace shapelens {
     // initialize moments as unit flux point source
     // -> first iteration: object looks like PSF
     mo(0,0) = 1;
+    eta = 0;
 
     Moments tmp(N);
     tmv::Matrix<data_t> P(mo.size(), mo.size(), 0);
@@ -37,9 +39,6 @@ namespace shapelens {
 	meo[k].grid.getWCS().transform(d.centroid);
       centroid += d.centroid;
       meD.push_back(d);
-
-      meSaveScale.push_back(0);
-      meTroubleScale.push_back(1e100);
     }
     // initialize with avg. centroid
     centroid(0) /= K;
@@ -48,8 +47,10 @@ namespace shapelens {
   
   void DEIMOSForward::minimize() { 
     data_t last_SN = 0; 
-    int t = 1;
-    Moments mo_save = mo;
+    t = 1; // iteration counter
+    Moments mo_save = mo, mo_= mo;
+    tmv::Matrix<data_t> A(mo.size(), mo.size());
+    A.setZero();
     history << "# Modelling object id = " << meo[0].id << " from K = " << K << " exposures" << std::endl;
     history << "# iter\tmoment guess" << std::endl;
     history << "# exp\tconvolved moments\tscale\teps" << std::endl;
@@ -58,7 +59,7 @@ namespace shapelens {
     history << "# " << std::string(70, '-') << std::endl;
     while (true) {
       history << "# " << t << "\t" << mo << std::endl;
-      computeMomentsFromGuess(t);
+      computeMomentsFromGuess();
 
       // compute chi^2 and best-fit moments
       data_t chi2 = 0;
@@ -85,58 +86,84 @@ namespace shapelens {
       mo = S * mo;
       SN = mo(0,0)/sqrt(S(0,0));
 
+      // calculated moments in coordintate frame with
+      // eps = eps1 >= 0 (semi-major axis  = x axis)
+      // see Teague (1980), eq. 11
+      std::complex<data_t> eps_mo = shapelens::epsilon(mo);
+      data_t phi = 0.5*atan2(imag(eps_mo),real(eps_mo));
       int i = mo.getIndex(2,0);
-      data_t eta = sqrt(S(i,i))/mo(i);
+      int j = mo.getIndex(2,0);
+      A(i,j) = (1+cos(2*phi))/2;
+      j = mo.getIndex(1,1);
+      A(i,j) = sin(2*phi);
+      j = mo.getIndex(0,2);
+      A(i,j) = (1-cos(2*phi))/2;
+      i = mo.getIndex(1,1);
+      j = mo.getIndex(2,0);
+      A(i,j) = -sin(2*phi)/2;
+      j = mo.getIndex(1,1);
+      A(i,j) = cos(2*phi);
+      j = mo.getIndex(0,2);
+      A(i,j) = sin(2*phi)/2;
       i = mo.getIndex(0,2);
-      eta += sqrt(S(i,i))/mo(i);
-      eta /= 2;
+      j = mo.getIndex(2,0);
+      A(i,j) = (1-cos(2*phi))/2;
+      j = mo.getIndex(1,1);
+      A(i,j) = -sin(2*phi);
+      j = mo.getIndex(0,2);
+      A(i,j) = (1+cos(2*phi))/2;
+      mo_ = A*mo;
+      // transform moment errors, too
+      tmv::Matrix<data_t> S_ = A * S * A.transpose();
+      i = mo.getIndex(2,0);
+      data_t dQ11_ = sqrt(S_(i,i))/mo_(i);
+      i = mo.getIndex(0,2);
+      data_t dQ22_ = sqrt(S_(i,i))/mo_(i);
+      // relative moment error in rotated frame:
+      // independent of orientation!
+      eta = 2*dQ11_*dQ22_/(dQ11_ + dQ22_);
 
-      history << "# ==>\t" << mo << "\t" << SN << "\t" << shapelens::epsilon(mo) << "\t" << chi2 << "\t" << eta << std::endl;
-
-      // update centroid
-      if (FIX_CENTROID == false) {
-	Point<data_t> centroid_shift;
-	centroid_shift(0) = mo(1,0)/mo(0,0);
-	centroid_shift(1) = mo(0,1)/mo(0,0);
-	// shift centroids
-	centroid += centroid_shift;
-	for (int k = 0; k < K; k++)
-	  meD[k].centroid = centroid; // always shift centroid together
-      }
-
+      history << "# ==>\t" << mo << "\t" << SN << "\t" << eps_mo << "\t" << chi2 << "\t" << eta << std::endl;
+      
       // non-sensical ellipticity check
       flags[1] = flagMoments(mo);
-      flags[0] = flags[0] | flags[1]; // keep track of difficulties
       if (flags[1] == 0) {
+	// convergence test:
+	// relative changes of the moment vector better than what is
+	// needed for rel. epsilon errors of 1e-3
+	tmv::Vector<data_t> diff = mo - mo_save;
+	if (diff*diff < 1e-8*(mo*mo))
+	  break;
+      
+	// update centroid
+	if (FIX_CENTROID == false) {
+	  Point<data_t> centroid_shift;
+	  centroid_shift(0) = mo(1,0)/mo(0,0);
+	  centroid_shift(1) = mo(0,1)/mo(0,0);
+	  // shift centroids
+	  centroid += centroid_shift;
+	  for (int k = 0; k < K; k++)
+	    meD[k].centroid = centroid; // always shift centroid together
+	}
 	mo_save = mo;
-	for (int k = 0; k < K; k++)
-	  meSaveScale[k] = std::max(meD[k].matching_scale, meSaveScale[k]);
+      } 
+      else { // ran into deep trouble here: aborting!
+	eta = SN = 0;
+	break;
       }
-      else {
-	mo = mo_save;
-	for (int k = 0; k < K; k++)
-	  meTroubleScale[k] = meD[k].matching_scale;
+      
+      // no convergence reached in due time: set flag 0
+      // this is often not a bad object, but with more jitter during
+      // the iterations
+      if (t==50) {
+	flags[0] = 1;
+	break;
       }
-
       t++;
-
-      // convergence: chi^2 does not change by more than relative 1e-2
-      // note: chi^2 might increase slightly before convergence
-      // so go for absolute value of change
-      /*
-      if (t==10 || (last_chi2 > 0 && fabs(last_chi2 - chi2) < 1e-2*last_chi2))
-	break;
-      last_chi2 = chi2;
-      */
-
-      // convergence of SN more stable than chi^2
-      if (t==10 || (last_SN > 0 && fabs(last_SN - SN) < 1e-3*last_SN))
-	break;
-      last_SN = SN;
     }
   }
 
-  void DEIMOSForward::computeMomentsFromGuess(int t) {
+  void DEIMOSForward::computeMomentsFromGuess() {
     // 1) convolve guess with psf moments
     // 2) measure deweighted moments from each exposure
     //    with weight function shape based on guess of convolved moments
@@ -147,8 +174,8 @@ namespace shapelens {
       Moments& mo_c = mem[k];
       DEIMOSElliptical& d = meD[k];
       // set ellipticities and sizes for weight functions in each exposure
-      d.eps = shapelens::epsilon(mo_c);
       d.matching_scale = getWeightFunctionScale(k);
+      d.eps = shapelens::epsilon(mo_c);
       d.scale = d.getEpsScale();
       history << "# " << t << "." << k << "\t" << mo_c << "\t" << d.matching_scale << "\t" << d.scale/d.scale_factor << "\t" << d.eps << std::endl;
 
@@ -163,23 +190,13 @@ namespace shapelens {
 
   void DEIMOSForward::convolveExposure(unsigned int k) {
     DEIMOSElliptical& d = meD[k];
-    DEIMOS::PSFMultiScale& psfs = mePSFMultiScale[k];
+    const DEIMOS::PSFMultiScale& psfs = mePSFMultiScale[k];
     data_t scale = psfs.getScaleClosestTo(d.matching_scale);
-
-    // when PSF images are available:
-    // if this if too different, create a new PSF moment measurement
-    if (mepsf.size() == K) {
-      if (fabs(scale-d.matching_scale) > 0.05*d.matching_scale) {
-	scale = d.matching_scale;
-	DEIMOSElliptical psf(mepsf[k], DEIMOS::N, d.C, scale);
-	psfs.insert(scale, psf.mo);
-      }
-    }
 
     // create matrix representation of convolution eq. 9
     // a copy from DEIMOS.cc, but this one saves matrix P
     // and applies to convolved moments mem[k]
-    Moments& p = psfs[scale];
+    const Moments& p = psfs.find(scale)->second;
     tmv::Matrix<data_t>& P = meP[k];
     for (int n = 0; n <= mo.getOrder(); n++) {
       for (int i = 0; i <= n; i++) {
@@ -198,45 +215,31 @@ namespace shapelens {
   }
   
   data_t DEIMOSForward::getWeightFunctionScale(unsigned int k) const {
-    const DEIMOS::PSFMultiScale& psfs = mePSFMultiScale[k];
     const DEIMOSElliptical& d = meD[k];
-    // simply use sqrt(trQ/F) as size: equivalent width of Gaussian 
-    const Moments& m = mem[k];
-    data_t s = sqrt((m(0,2) + m(2,0))/m(0,0));
+    const DEIMOS::PSFMultiScale& psfs = mePSFMultiScale[k];
     
-    // Noise correction, expect noise variance to be set
-    if (S(0,0) > 0) {
-      const tmv::Matrix<data_t>& P = meP[k];
-      tmv::Matrix<data_t> S_c = P*S*P.transpose();
-      // error on sqrt(trQ), ignoring flux uncertainty
-      data_t sigma_2 = 0;
-      unsigned int i = m.getIndex(2,0);
-      sigma_2 += S_c(i,i);
-      i = m.getIndex(0,2);
-      sigma_2 += S_c(i,i);
-      data_t d_s = 0.822179*sqrt(sigma_2)/m(0,0);
-      s -= d_s;
-    }
+    // initial iteration: start with size of PSF
+    if (t==1) {
+      // simply use sqrt(trQ/F) as size: equivalent width of Gaussian 
+      const Moments& m = mem[k];
+      data_t s = sqrt((m(0,2) + m(2,0))/m(0,0));
+      if (Config::USE_WCS)
+	s /= d.scale_factor; // correct for WCS rescaling
+      return psfs.getScaleClosestTo(s);
+    } 
+    else {
+      // adjust scale such that we approach ETA_MAX
+      // Since measured moment errors scale with s^3,
+      // we assume the same scaling for eta.
+      // But as the galactic moments themselves and the PSF moments
+      // grow with s, this relation is only approximately correct, but to first
+      // order both effects cancel each other.
+      data_t s = d.matching_scale * pow(ETA_MAX/eta, 1./3);
 
-    if (Config::USE_WCS)
-      s /= d.scale_factor; // correct for WCS rescaling 
+      if (s <= psfs.getMaximumScale())
+	s = psfs.getScaleClosestTo(s);
 
-    // if we have the PSF image, we can use any scale
-    if (mepsf.size() == K) {
-      if (s >= meTroubleScale[k])
-	s = (meSaveScale[k] + meTroubleScale[k])/2;
+      return s;
     }
-    else { // if not we have to use the ones given to us
-      s = psfs.getScaleClosestTo(s);
-      if (s >= meTroubleScale[k]) {
-	DEIMOS::PSFMultiScale::const_iterator iter = psfs.find(meTroubleScale[k]);
-	s = iter->first;
-	if (iter != psfs.begin()) {
-	  iter--;
-	  s = iter->first;
-	}
-      }
-    }
-    return s;
   }
 }

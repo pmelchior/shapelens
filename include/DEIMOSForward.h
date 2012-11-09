@@ -14,6 +14,7 @@ namespace shapelens {
     Point<data_t> centroid;
     /// S/N of moment measurement.
     data_t SN;
+    data_t eta;
     /// History of modelling.
     History history;
     /// Modelling flags.
@@ -23,21 +24,21 @@ namespace shapelens {
 
     /// Whether to fix the centroid of the object in all exposures.
     static bool FIX_CENTROID;
+    static data_t ETA_MAX;
     
   protected:
-    void computeMomentsFromGuess(int t);
+    void computeMomentsFromGuess();
     data_t getWeightFunctionScale(unsigned int k) const;
     const MultiExposureObject& meo;
-    const MultiExposureObject& mepsf;
+    const std::vector<DEIMOS::PSFMultiScale>& mePSFMultiScale;
     MultiExposureMoments mem;
     Moments mo0;
     std::vector<tmv::Matrix<data_t> > meP;
-    std::vector<DEIMOS::PSFMultiScale> mePSFMultiScale;
-    std::vector<data_t> meSaveScale, meTroubleScale;
     void initialize(int C);
     void minimize();
     void convolveExposure(unsigned int k);
     int K;
+    int t;
   };
 } // end namespace
 #endif
