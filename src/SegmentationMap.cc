@@ -23,7 +23,7 @@ int SegmentationMap::getNumberOfObjects() {
 
 
 // find list of pixels due to given object from segmentation map 
-void SegmentationMap::findObjectPixels(std::set<ulong>& pixelset, ulong objectnr, long xmin, long xmax, long ymin, long ymax) {
+void SegmentationMap::findObjectPixels(std::set<unsigned long>& pixelset, unsigned long objectnr, long xmin, long xmax, long ymin, long ymax) {
   long axsize0 = SegmentationMap::grid.getSize(0), axsize1 = SegmentationMap::grid.getSize(1);
   pixelset.clear();
   Point<int> P;

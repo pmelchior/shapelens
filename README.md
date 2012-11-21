@@ -14,11 +14,11 @@ If you use these algorithms for your work, please do not forget to cite the rele
 Installation
 ------------
 
-The library should work under Linux and Mac OS X, with any reasonable recent C++ compiler.
+The library should work under Linux and Mac OS X, with any reasonably recent C++ compiler.
 
 ### Prerequisites
 * [Boost](http://www.boost.org/), headers only
-* [tmv](http://code.google.com/p/tmv-cpp/) for fast matrix/vector operations (v0.71+)
+* [tmv](http://code.google.com/p/tmv-cpp/) for fast matrix/vector operations (v0.71+; make sure you compile with the `scons` option `INST_INT=true`, see #1)
 * [cfitsio](http://heasarc.gsfc.nasa.gov/fitsio/) to work with FITS files, the ubiquitous file format in astronomy
 
 For the World Coordinate System (WCS, to relate pixel coordinates to coordinates on the sky), please use [libwcs](http://www.atnf.csiro.au/people/mcalabre/WCS/index.html).
@@ -31,7 +31,7 @@ The Makefile recognizes several environment variables:
 * `PREFIX`: where the library and headers are to be installed (default: `/usr/`)
 * `TMV_PREFIX`: where the tmv library can be found (default: `$PREFIX`)
 * `SPECIAL_FLAGS`: additional compiler flags to optimize output and provide include directories, e.g.
-  `-03 -m64 -march=native -fPIC`
+  `-03 -m64 -march=native -fPIC`. Make sure you add the flag `-DNDEBUG` for a production system.
 * `SPECIAL_LIBS`: additional linker flags and directories, e.g.
   `-L$HOME/lib`
 
