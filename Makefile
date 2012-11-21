@@ -94,7 +94,7 @@ install: library shared
 	cp $(LIBPATH)/lib$(LIBNAME).a $(PREFIX)/lib/
 	cp $(LIBPATH)/lib$(LIBNAME).$(LIBEXT) $(PREFIX)/lib/
 	mkdir  -p $(PREFIX)/include/$(LIBNAME)
-	cd $(INCLPATH) && find . -type f -name '*.h' -exec  cp --parents {} $(PREFIX)/include/$(LIBNAME)/ \; && cd ../
+	cp $(INCLPATH)/*.h $(PREFIX)/include/$(LIBNAME)/
 
 progs: $(PROGPATH) $(PROGSOBJECTS)
 
