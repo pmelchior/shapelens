@@ -18,7 +18,7 @@ The library should work under Linux and Mac OS X, with any reasonably recent C++
 
 ### Prerequisites
 * [Boost](http://www.boost.org/), headers only
-* [tmv](http://code.google.com/p/tmv-cpp/) for fast matrix/vector operations (v0.71+; make sure you compile with the `scons` option `INST_INT=true`, see \#1)
+* [tmv](http://code.google.com/p/tmv-cpp/) for fast matrix/vector operations (v0.71+; make sure you compile with the `scons` option `INST_INT=true`, see #1)
 * [cfitsio](http://heasarc.gsfc.nasa.gov/fitsio/) to work with FITS files, the ubiquitous file format in astronomy
 
 For the World Coordinate System (WCS, to relate pixel coordinates to coordinates on the sky), please use [libwcs](http://www.atnf.csiro.au/people/mcalabre/WCS/index.html).
