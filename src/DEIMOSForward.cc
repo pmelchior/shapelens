@@ -212,6 +212,7 @@ namespace shapelens {
     }
     // convolve moments
     mem[k] = P*mo;
+    d.R2 = shapelens::R2(mem[k], p);
   }
   
   data_t DEIMOSForward::getWeightFunctionScale(unsigned int k) const {

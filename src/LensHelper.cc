@@ -64,15 +64,24 @@ namespace shapelens {
   }
 
   data_t scale(const Moments& mo) {
-    if (mo.getOrder() >= 2)
-      return sqrt((mo(2,0)+mo(0,2))/mo(0,0));
+    if (mo.getOrder() >= 2) {
+      if ((mo(2,0)+mo(0,2))/mo(0,0) > 0)
+	return sqrt((mo(2,0)+mo(0,2))/mo(0,0));
+      else
+	return 0;
+    }
     else
       return 0;
   }
   
   data_t R2(const Moments& g, const Moments& p) {
-    if (g.getOrder() >= 2)
-      return 1 - pow2(scale(p)/scale(g));
+    if (g.getOrder() >= 2) {
+      data_t scale_g = scale(g);
+      if (scale_g > 0)
+	return 1 - pow2(scale(p)/scale(g));
+      else
+	return 0;
+    }
     else
       return 0;
   } 
