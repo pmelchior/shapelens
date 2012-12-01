@@ -22,7 +22,8 @@ namespace shapelens {
       history.clear();
     }
     /// Constructor with given image size \p NxM.
-  Image(unsigned int N, unsigned int M) : tmv::Vector<T>(N*M) {
+  Image(unsigned int N, unsigned int M) : 
+    tmv::Vector<T>(N*M), grid(0,0,N,M) {
     }
     /// Argumented constructor for reading from a FITS file.
     /// The extension can be given in the standard cfitsio way as
@@ -37,6 +38,7 @@ namespace shapelens {
     /// Copy operator.
     Image<T>* operator=(const Image<T>& im) {
       tmv::Vector<T>::operator=(im);
+      grid = im.grid;
       return this;
     } 
     /// Copy operator from base-class.
