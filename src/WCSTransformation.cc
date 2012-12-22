@@ -132,7 +132,7 @@ namespace shapelens {
     // apply sip transform if necessary
     if (has_sip) {
       // WCS pixels start at (1/1), so add 1
-      double u = P(0) + 1 - crpix1, v = P(1) + 1 - crpix2;
+      double u = P(0) + 0 - crpix1, v = P(1) + 0 - crpix2;
       double f = sip_polynomial(A,u,v), g = sip_polynomial(B, u, v);
       *pixcrd = u + f + crpix1;
       *(pixcrd+1) = v + g + crpix2;
@@ -193,8 +193,8 @@ namespace shapelens {
     }
 
     // since WCS pixels start at (1/1), subtract of 1 to conform with shapelens
-    P(0) -= 1;
-    P(1) -= 1;
+    P(0) -= 0;
+    P(1) -= 0;
   }
 
   boost::shared_ptr<CoordinateTransformation> WCSTransformation::clone() const {
