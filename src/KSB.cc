@@ -53,11 +53,11 @@ namespace shapelens {
   
     // various moment combinations measured with different derivatives 
     // of the weight function
-    data_t trQ, trQ_, M, mu_, mu__, psi_, psi__, pi_, pi__, nu_, nu__;
+    data_t trQ_, M, mu_, mu__, psi_, psi__, pi_, pi__, nu_, nu__;
 
     // moments measured with w
     Moments mo(obj, w, 2, &centroid);
-    M = mo(0,0);
+    flux = M = mo(0,0);
     trQ = __trQ(mo);
     chi = shapelens::chi(mo);
 

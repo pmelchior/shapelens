@@ -61,6 +61,10 @@ namespace shapelens {
     tmv::Matrix<data_t> P1;
     /// Smear tensor.
     tmv::Matrix<data_t> P_sm;
+    /// Flux under the weight function.
+    data_t flux;
+    /// Size under the weight function.
+    data_t trQ;
 
     // shear estimators without PSF correction
     // for stellar shapes
