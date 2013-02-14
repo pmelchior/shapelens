@@ -14,19 +14,10 @@ namespace shapelens {
   /// Provides segmentation of an image into various Object instances
   /// from SExtractor's output files.
   /// It is assumed that for each image there's a SExtractor catalog file
-  /// (in \p ASCII_HEAD format) and a segmentation map 
+  /// (in \p ASCII_HEAD or FITS format) and a segmentation map 
   /// (which SExtractor generates if \p CHECKIMAGE_TYPE \p SEGMENTATION 
   /// is specified in its configuration file).
   /// See Catalog and CatObject for the required catalog parameters.
-  ///
-  /// The segmentation map is expected to have <tt>TINT</tt> FITS datatype
-  /// (which is not provided by SExtractor). 
-  /// To convert (and compress) it one can use the <tt>fitscopy</tt> tool from 
-  /// the FITS toolbox:
-  /// \code
-  /// fitscopy 'input.fits[pixi X]' output.fits
-  /// gzip 'output.fits'
-  /// \endcode
   ///
   /// The Object entities will have these features:
   /// - The image cutout is quadratic such that the area within the object 
@@ -34,13 +25,13 @@ namespace shapelens {
   ///   plus additional border area, specified by Config::ADD_BORDER, 
   ///   is included. Areas outside of the original image are set to \p 0.
   /// - The segmentation map corresponds to the same cutout area. Areas outside
-  ///   of the original image are set to \p -1.
+  ///   of the original image are set to \p -1, bad pixels to \p -2.
   /// - If a weight map is provided, its cutout also corresponds to the image
   ///   cutout, areas outside of the original image are set to \p 0.
   ///
   /// Example usage:
   /// \code
-  /// SExFrame f(fitsfile, catfile);
+  /// SExFrame f(fitsfile, catfile, segmap);
   /// const Catalog& cat = f.catalog;
   /// Catalog::const_iterator iter;
   /// for(iter = cat.begin(); iter != cat.end(); iter++) {
