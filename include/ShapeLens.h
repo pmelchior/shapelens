@@ -49,8 +49,8 @@ namespace shapelens {
     /// Whether the History should be printed to stdout during data processing,
     /// default = false.
     static bool VERBOSITY;
-    /// Whether the segmented ojects should be checked for overlapping objects
-    /// or boundary truncation, default = true.
+    /// Whether the segmented objects should be checked for bad pixels and
+    /// boundary truncation, default = true.
     static bool CHECK_OBJECT;
     /// The amount by which the objects area is enlarged on each side relative to the
     /// object's area in the segmentation map, default = 0.5

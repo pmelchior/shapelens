@@ -97,51 +97,69 @@ void SExFrame::fillObject(Object& O, Catalog::const_iterator& catiter) {
     if (Config::USE_WCS)
       O.grid.setWCS(grid.getWCS());
 
-    if (fptr_w != NULL) {
-      O.weight.resize((xmax-xmin)*(ymax-ymin));
-      O.weight.grid.setSize(xmin,ymin,xmax-xmin,ymax-ymin);
-      if (Config::USE_WCS)
-	O.weight.grid.setWCS(grid.getWCS());
-    }
-    if (fptr_s != NULL) {
-      O.segmentation.resize((xmax-xmin)*(ymax-ymin));
-      O.segmentation.grid.setSize(xmin,ymin,xmax-xmin,ymax-ymin);
-      if (Config::USE_WCS)
-	O.segmentation.grid.setWCS(grid.getWCS());
-    }
-
     // copy pixel data
     int status = 0;
     data_t nullval = 0;
     int anynull = 0;
     long firstpix[2] = {xmin+1,ymin+1}, lastpix[2] = {xmax, ymax}, inc[2] = {1,1};
-    O.setZero();
-    fits_read_subset(fptr, FITS::getDataType(data_t(0)), firstpix, lastpix, inc, &nullval, O.ptr(), &anynull, &status);
+
+    // read image, and subtract background if requested
+    if (bg == 0) {
+      O.setZero();
+      fits_read_subset(fptr, FITS::getDataType(data_t(0)), firstpix, lastpix, inc, &nullval, O.ptr(), &anynull, &status);
+    } else {
+      O.setAllTo(bg);
+      fits_read_subset(fptr, FITS::getDataType(data_t(0)), firstpix, lastpix, inc, &nullval, O.ptr(), &anynull, &status);
+      O.addToAll(-bg);
+    }
+
+    // read weightmap and segmentation map if provided
     if (fptr_w != NULL) {
+      O.weight.resize((xmax-xmin)*(ymax-ymin));
+      O.weight.grid.setSize(xmin,ymin,xmax-xmin,ymax-ymin);
+      if (Config::USE_WCS)
+	O.weight.grid.setWCS(grid.getWCS());
       O.weight.setZero();
       fits_read_subset(fptr_w, FITS::getDataType(data_t(0)), firstpix, lastpix, inc, &nullval, O.weight.ptr(), &anynull, &status);
     }
-    if (fptr_s != NULL) {
-      O.segmentation.setAllTo(-1);
-      fits_read_subset(fptr_s, FITS::getDataType(int(0)), firstpix, lastpix, inc, &nullval, O.segmentation.ptr(), &anynull, &status);
+    // even if there is not segmentation map, 
+    // create one to store bad pixels
+    if (fptr_s != NULL || Config::CHECK_OBJECT) {
+      O.segmentation.resize((xmax-xmin)*(ymax-ymin));
+      O.segmentation.grid.setSize(xmin,ymin,xmax-xmin,ymax-ymin);
+      if (Config::USE_WCS)
+	O.segmentation.grid.setWCS(grid.getWCS());
+
+      if (fptr_s != NULL) {
+	O.segmentation.setAllTo(-1);
+	fits_read_subset(fptr_s, FITS::getDataType(int(0)), firstpix, lastpix, inc, &nullval, O.segmentation.ptr(), &anynull, &status);
+      } else
+	O.setZero();
     }
 
-    // check image pixels for neighboring objects (noted in history)
-    // also eliminate the background is non-zero
-    if (Config::CHECK_OBJECT && fptr_s != NULL) {
-      vector<uint> nearby_objects;
-      for (int i =0; i < O.size(); i++) {
-
-	if (bg != 0) {
-	  Point<int> P = O.grid.getCoords(i);
-	  if (P(0) >= 0 & P(0) < axsize0 & P(1) >= 0 & P(1) < axsize1)
-	    O(i) -= bg;
+    // check image pixels for boundary truncation and bad pixels
+    if (Config::CHECK_OBJECT) {
+      /*
+      if (fptr_s != NULL) {
+	vector<uint> nearby_objects;
+	for (int i =0; i < O.size(); i++) {
+	  if (O.segmentation(i) > 0 && O.segmentation(i) != catiter->first) {
+	    if (std::find(nearby_objects.begin(),nearby_objects.end(),O.segmentation(i)) == nearby_objects.end()) {
+	      O.history << "# Object " << O.segmentation(i) << " nearby!" << std::endl;
+	      nearby_objects.push_back(O.segmentation(i));
+	    }
+	  }
 	}
-
-	if (O.segmentation(i) > 0 && O.segmentation(i) != catiter->first) {
-	  if (std::find(nearby_objects.begin(),nearby_objects.end(),O.segmentation(i)) == nearby_objects.end()) {
-	    O.history << "# Object " << O.segmentation(i) << " nearby!" << std::endl;
-	    nearby_objects.push_back(O.segmentation(i));
+      }
+      */
+      if (fptr_w != NULL) {
+	for (int i =0; i < O.size(); i++) {
+	  if (O.weight(i) <= 0)
+	    O.segmentation(i) = -2;
+	  if (fptr_s == NULL) {
+	    Point<int> P = O.grid.getCoords(i);
+	    if (P(0) < 0 || P(0) >= axsize0 || P(1) < 0 || P(1) >= axsize1)
+	      O.segmentation(i) = -1;
 	  }
 	}
       }
