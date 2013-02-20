@@ -104,14 +104,9 @@ void SExFrame::fillObject(Object& O, Catalog::const_iterator& catiter) {
     long firstpix[2] = {xmin+1,ymin+1}, lastpix[2] = {xmax, ymax}, inc[2] = {1,1};
 
     // read image, and subtract background if requested
-    if (bg == 0) {
-      O.setZero();
-      fits_read_subset(fptr, FITS::getDataType(data_t(0)), firstpix, lastpix, inc, &nullval, O.ptr(), &anynull, &status);
-    } else {
-      O.setAllTo(bg);
-      fits_read_subset(fptr, FITS::getDataType(data_t(0)), firstpix, lastpix, inc, &nullval, O.ptr(), &anynull, &status);
+    fits_read_subset(fptr, FITS::getDataType(data_t(0)), firstpix, lastpix, inc, &nullval, O.ptr(), &anynull, &status);
+    if (bg != 0)
       O.addToAll(-bg);
-    }
 
     // read weightmap and segmentation map if provided
     if (fptr_w != NULL) {
@@ -119,7 +114,6 @@ void SExFrame::fillObject(Object& O, Catalog::const_iterator& catiter) {
       O.weight.grid.setSize(xmin,ymin,xmax-xmin,ymax-ymin);
       if (Config::USE_WCS)
 	O.weight.grid.setWCS(grid.getWCS());
-      O.weight.setZero();
       fits_read_subset(fptr_w, FITS::getDataType(data_t(0)), firstpix, lastpix, inc, &nullval, O.weight.ptr(), &anynull, &status);
     }
     // even if there is not segmentation map, 
@@ -130,37 +124,18 @@ void SExFrame::fillObject(Object& O, Catalog::const_iterator& catiter) {
       if (Config::USE_WCS)
 	O.segmentation.grid.setWCS(grid.getWCS());
 
-      if (fptr_s != NULL) {
-	O.segmentation.setAllTo(-1);
+      if (fptr_s != NULL)
 	fits_read_subset(fptr_s, FITS::getDataType(int(0)), firstpix, lastpix, inc, &nullval, O.segmentation.ptr(), &anynull, &status);
-      } else
-	O.setZero();
+      else
+	O.segmentation.setZero();
     }
 
-    // check image pixels for boundary truncation and bad pixels
+    // check image for bad pixels
     if (Config::CHECK_OBJECT) {
-      /*
-      if (fptr_s != NULL) {
-	vector<uint> nearby_objects;
-	for (int i =0; i < O.size(); i++) {
-	  if (O.segmentation(i) > 0 && O.segmentation(i) != catiter->first) {
-	    if (std::find(nearby_objects.begin(),nearby_objects.end(),O.segmentation(i)) == nearby_objects.end()) {
-	      O.history << "# Object " << O.segmentation(i) << " nearby!" << std::endl;
-	      nearby_objects.push_back(O.segmentation(i));
-	    }
-	  }
-	}
-      }
-      */
       if (fptr_w != NULL) {
-	for (int i =0; i < O.size(); i++) {
+	for (int i = 0; i < O.size(); i++) {
 	  if (O.weight(i) <= 0)
 	    O.segmentation(i) = -2;
-	  if (fptr_s == NULL) {
-	    Point<int> P = O.grid.getCoords(i);
-	    if (P(0) < 0 || P(0) >= axsize0 || P(1) < 0 || P(1) >= axsize1)
-	      O.segmentation(i) = -1;
-	  }
 	}
       }
     }
@@ -176,8 +151,7 @@ void SExFrame::fillObject(Object& O, Catalog::const_iterator& catiter) {
   }
 }
 
-// now extend to region around the object by
-// typically objectsize/2, minimum 16 pixels
+// now extend to region around the object by a factor > 0, minimum 16 pixels
 void SExFrame::addFrameBorder(data_t factor, int& xmin, int& xmax, int& ymin, int& ymax) { 
   if (factor > 0) {
     long int xrange, yrange, xborder, yborder;
@@ -191,7 +165,7 @@ void SExFrame::addFrameBorder(data_t factor, int& xmin, int& xmax, int& ymin, in
       ymax++;
       yrange++;
     }
-    // make the object frame square, because of const beta in both directions
+    // make the object frame square to avoid anisotropies
     if (xrange < yrange) {
       yborder = std::max((int)floor(yrange*factor), 16);
       xborder = yborder + (yrange - xrange)/2;
@@ -199,6 +173,7 @@ void SExFrame::addFrameBorder(data_t factor, int& xmin, int& xmax, int& ymin, in
       xborder = std::max((int)floor(xrange*factor), 16);
       yborder = xborder + (xrange - yrange)/2;
     }
+    // limit corner points to within frame
     xmin = std::max((long int) 0, xmin - xborder);
     xmax = std::min(axsize0, xmax + xborder);
     ymin = std::max((long int) 0, ymin - yborder);
