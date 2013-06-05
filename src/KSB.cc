@@ -53,11 +53,11 @@ namespace shapelens {
   
     // various moment combinations measured with different derivatives 
     // of the weight function
-    data_t trQ, trQ_, M, mu_, mu__, psi_, psi__, pi_, pi__, nu_, nu__;
+    data_t trQ_, M, mu_, mu__, psi_, psi__, pi_, pi__, nu_, nu__;
 
     // moments measured with w
     Moments mo(obj, w, 2, &centroid);
-    M = mo(0,0);
+    flux = M = mo(0,0);
     trQ = __trQ(mo);
     chi = shapelens::chi(mo);
 
@@ -121,13 +121,15 @@ namespace shapelens {
 
   void KSB::findCentroid(const Object& obj, GaussianWeightFunction& w) {
     data_t delta;
+    int iter = 0;
     do {
       Moments mo(obj, w, 1, &centroid); 
       Point<data_t> shift(mo(1,0)/mo(0,0), mo(0,1)/mo(0,0));
       delta = sqrt(shift(0)*shift(0) + shift(1)*shift(1)) / scale_factor;
       centroid += shift;
       w.setCentroid(centroid);
-    } while (delta > 1e-2);
+      iter++;
+    } while (delta > 1e-2 && iter < 20);
   }
 
   data_t KSB::__trQ(const Moments& mo) const {

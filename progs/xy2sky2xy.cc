@@ -20,15 +20,9 @@ int main(int argc, char* argv[]) {
   std::cout.flags(std::ios_base::fixed);
   if (reverse.isSet()) {
     wcs.inverse_transform(P);
-    // shapelens uses (0/0) for left-lower corner, WCS (1/1)
-    P(0) += 1;
-    P(1) += 1;
     std::cout << std::setprecision(2) << P(0) << "\t" << P(1) << std::endl;
   } else {
-    // shapelens uses (0/0) for left-lower corner, WCS (1/1)
-    P(0) -= 1;
-    P(1) -= 1;
     wcs.transform(P);
-    std::cout << std::setprecision(6) << P(0) << "\t" << P(1) << std::endl;
+    std::cout << std::setprecision(8) << P(0) << "\t" << P(1) << std::endl;
   }
 }
