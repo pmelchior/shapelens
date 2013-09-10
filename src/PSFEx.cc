@@ -40,14 +40,14 @@ namespace shapelens {
   }
 
   data_t PSFEx::maxsize() {
-    return ((psfaxis[0]-1)/2.-INTERPFAC)*psf_samp;
+    return ((psfaxis[0]-1)/2.)*psf_samp;
   }
 
   void PSFEx::fillObject(Object& psf) {
     // psf in sampling of PSFEx model
     Image<data_t> tmp = basis[0]; // set with zero-th mode
     data_t dx = (psf.centroid(0)-polzero[0])/polscale[0];
-    data_t dy = (psf.centroid(0)-polzero[1])/polscale[1];
+    data_t dy = (psf.centroid(1)-polzero[1])/polscale[1];
 
     // iterate through all orders from 1 to n (zero done above already)
     for(int n = 1; n <= poldeg; n++) {
@@ -66,7 +66,7 @@ namespace shapelens {
       data_t relxp = (P(0) - psf.centroid(0))/psf_samp;
       data_t relyp = (P(1) - psf.centroid(1))/psf_samp;
       
-      if (fabs(relxp) > (psfaxis[0]-1)/2.-INTERPFAC || fabs(relyp) > (psfaxis[1]-1)/2.-INTERPFAC)
+      if (fabs(relxp) > maxsize()/psf_samp || fabs(relyp) > maxsize()/psf_samp)
 	psf(l) = 0;
       else {
 	// iterate over all neighboring pixels in PSFEx sampled grid

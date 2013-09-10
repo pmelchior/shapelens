@@ -21,7 +21,7 @@ int main(int argc, char* argv[]) {
   // size of PSF postage stamp:
   // this can be smaller than max(p.getSize(0), p.getSize(1))
   // since the PSF model only has finite power 
-  int P = int(2*floor(p.maxsize()));;
+  int P = int(2*ceil(p.maxsize()));;
   if (patch.isSet())
     P = patch.getValue();
   psf.resize(P*P);
