@@ -40,7 +40,7 @@ namespace shapelens {
   }
 
   data_t PSFEx::maxsize() {
-    return ((psfaxis[0]-1)/2.)*psf_samp;
+    return ((psfaxis[0]-1)/2.-INTERPFAC)*psf_samp;
   }
 
   void PSFEx::fillObject(Object& psf) {
