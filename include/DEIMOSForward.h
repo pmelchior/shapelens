@@ -8,6 +8,7 @@ namespace shapelens {
   typedef std::vector<Moments> MultiExposureMoments;
   class DEIMOSForward : public DEIMOS {
   public:
+    DEIMOSForward(const MultiExposureObject& meo, const MultiExposureObject& mepsf, int N, int C, const std::set<data_t>& scales);
     DEIMOSForward(const MultiExposureObject& meo, const std::vector<DEIMOS::PSFMultiScale>& mePSFMultiScale, int N, int C);
     std::vector<DEIMOSElliptical> meD;
     /// Centroid of the object (in WCS coordinates).
@@ -22,6 +23,9 @@ namespace shapelens {
     /// - <tt>flags[1]</tt>: non-sensical moments occurred during the last iterations
     std::bitset<2> flags;
 
+    /// Get PSF moments for each exposure
+    const std::vector<DEIMOS::PSFMultiScale>& getPSFMoments() const;
+
     /// Whether to fix the centroid of the object in all exposures.
     static bool FIX_CENTROID;
     static data_t ETA_MAX;
@@ -30,7 +34,7 @@ namespace shapelens {
     void computeMomentsFromGuess();
     data_t getWeightFunctionScale(unsigned int k) const;
     const MultiExposureObject& meo;
-    const std::vector<DEIMOS::PSFMultiScale>& mePSFMultiScale;
+    std::vector<DEIMOS::PSFMultiScale> mePSFMultiScale;
     MultiExposureMoments mem;
     Moments mo0;
     std::vector<tmv::Matrix<data_t> > meP;

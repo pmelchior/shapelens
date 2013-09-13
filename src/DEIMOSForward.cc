@@ -7,6 +7,25 @@ namespace shapelens {
   bool DEIMOSForward::FIX_CENTROID = false;
   data_t DEIMOSForward::ETA_MAX = 0.1;
 
+  DEIMOSForward::DEIMOSForward(const MultiExposureObject& meo_, const MultiExposureObject& mepsf, int N, int C, const std::set<data_t>& scales) :
+    DEIMOS(N), meo(meo_), K(meo_.size()) {
+    // get moments for the PSF of each exposure at all scales
+    // this is expensive! so possible improvement is to start with
+    // the smallest scale only and see whether this yields a decent result
+    for (int k=0; k<K; k++) {
+      std::set<data_t>::const_iterator siter = scales.begin();
+      //siter++; // first is already done
+      DEIMOS::PSFMultiScale psfms;
+      mePSFMultiScale.push_back(psfms);
+      for (siter; siter != scales.end(); siter++) {
+	DEIMOSElliptical dp(mepsf[k], N, C, *siter);
+	mePSFMultiScale[k].insert(*siter, dp.mo);
+      }
+    }
+    initialize(C);
+    minimize();
+  }
+
   DEIMOSForward::DEIMOSForward(const MultiExposureObject& meo_, const std::vector<DEIMOS::PSFMultiScale>& mePSFMultiScale_, int N, int C) :
     DEIMOS(N), meo(meo_), mePSFMultiScale(mePSFMultiScale_), K(meo_.size()) {
     initialize(C);
@@ -242,5 +261,9 @@ namespace shapelens {
 
       return s;
     }
+  }
+
+  const std::vector<DEIMOS::PSFMultiScale>& DEIMOSForward::getPSFMoments() const {
+    return mePSFMultiScale;
   }
 }
