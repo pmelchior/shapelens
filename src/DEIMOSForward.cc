@@ -5,7 +5,7 @@
 namespace shapelens {
 
   bool DEIMOSForward::FIX_CENTROID = false;
-  data_t DEIMOSForward::ETA_MAX = 0.1;
+  data_t DEIMOSForward::ETA_MAX = 0.2;
 
   /*DEIMOSForward::DEIMOSForward(const MultiExposureObject& meo_, const std::vector<DEIMOS::PSFMultiScale>& mePSFMultiScale_, int N, int C) :
     DEIMOS(N), meo(meo_), mePSFMultiScale(mePSFMultiScale_), K(meo_.size()) {
@@ -58,6 +58,7 @@ namespace shapelens {
     centroid = best_centroid;
     S = best_S;
     mem_psf = best_mem_psf;
+    flags[1] = 0; // clear flag since previous run was good
     history << " Reverting to previous measurement." << std::endl;
   }
 
@@ -151,6 +152,7 @@ namespace shapelens {
       }
       S = S.inverse();
       mo = S * mo;
+      //S /= (data_t) K;
             
       // non-sensical ellipticity check
       flags[1] = flagMoments(mo);
