@@ -8,7 +8,11 @@ namespace shapelens {
 Property::Property() : std::map<std::string, variant_t>() {}
 
 variant_t& Property::operator[](const std::string& key) {
-  return std::map<std::string, variant_t>::operator[](key);
+  Property::iterator iter = Property::find(key);
+  if (iter != Property::end())
+    return iter->second;
+  else
+    throw std::invalid_argument("Property: Key " + key + " does not exist!");
 }
 
 const variant_t& Property::operator[](const std::string& key) const {
