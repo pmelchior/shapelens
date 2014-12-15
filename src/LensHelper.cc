@@ -1,19 +1,8 @@
 #include "../include/LensHelper.h"
-#include "../include/MathHelper.h"
 
 // All equations taken from Bartelmann & Schneider (2001)
 namespace shapelens {
   
-  void eps2chi(const std::complex<data_t>& eps, std::complex<data_t>& chi) {
-    chi = 2.*eps/(1+pow2(abs(eps)));
-  }
-  void chi2eps(const std::complex<data_t>& chi, std::complex<data_t>& eps) {
-    eps = chi/(1. + sqrt(complex<data_t>(1 - pow2(abs(chi)))));
-  }
-  void lensEps(const std::complex<data_t>& gamma, std::complex<data_t>& eps) {
-    eps = (eps + gamma)/(1. + conj(gamma)*eps);
-  }
-
   std::complex<data_t> epsilon(const Moments& mo) {
     if (mo.getOrder() >= 2) {
       if (mo(2,0) == 0. && mo(1,1) == 0. && mo(0,2) == 0.)

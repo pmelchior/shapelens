@@ -67,7 +67,7 @@ void Catalog::read(string catfile, const std::list<std::string>& optional) {
     // open cat file
     ifstream catalog (catfile.c_str());
     if (catalog.fail())
-      throw std::invalid_argument("Catalog: catalog file does not exist!");
+      throw std::invalid_argument("Catalog: ASCII catalog file " + catfile + " does not exist!");
     catalog.clear();
 
     // read in cat file
@@ -366,7 +366,7 @@ bool Catalog::checkFormat() {
     std::ostringstream mess;
     mess << "Catalog: mandatory catalog parameters are missing!" << endl;
     mess << "Present:\t" << present << endl;
-    throw std::runtime_error(mess.str());
+    throw std::invalid_argument(mess.str());
   }
   else
     formatChecked = 1;
