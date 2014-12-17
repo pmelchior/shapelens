@@ -245,9 +245,9 @@ namespace shapelens {
     /// returned insted.\n
     /// \p row numbers start with 0 according to regular C-style iterations. 
     template <class T>
-      static void readTableValue(fitsfile* fptr, long row, int colnr, T& val, T nullvalue = 0) {
+      static void readTableValue(fitsfile* fptr, long row, int colnr, T& val, unsigned int n_elems = 1, T nullvalue = 0) {
       int status = 0, anynull;
-      fits_read_col(fptr, getDataType(val), colnr, row+1, 1, 1, &nullvalue, &val, &anynull, &status);
+      fits_read_col(fptr, getDataType(val), colnr, row+1, 1, n_elems, &nullvalue, &val, &anynull, &status);
       if (status != 0) {
 	std::ostringstream note;
 	note << "FITS: Cannot read value in (row/col) = (" << row << "/" << colnr << ") from FITS table in " << getFileName(fptr) << ": " << getErrorMessage(status);
